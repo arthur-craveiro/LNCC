@@ -1,0 +1,31 @@
+sudo apt update && sudo apt full-upgrade && sudo apt autoclean && sudo apt autoremove -y && sudo snap refresh && sudo snap set system refresh.retain=2
+mkdir ga-17
+cd ga-17
+mkdir aula01
+cd aula01
+cat > alomundo.c
+cat alomundo.c
+gcc alomundo.c -o alomundo.exe
+alomundo.exe
+./alomundo.exe
+gcc alomundo.c -c
+gcc alomundo.o -o alomundob.exe
+
+ls -l alomundo.exe
+ls 
+ls alomundo.exe
+ls
+ls -l
+wc alomundo.c
+./alomundo.exe>tela.txt
+cat tela.txt
+ls -l tela.txt
+wc -c tela.txt
+./alomundo.exe>>tela.txt
+ls -l tela.txt
+cat tela.txt
+history
+history > comandos.txt
+cat comandos.txt
+sort comandos.txt
+history -w history.txt
