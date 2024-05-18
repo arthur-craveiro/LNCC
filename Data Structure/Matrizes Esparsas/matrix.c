@@ -335,36 +335,20 @@ int matrix_multiply(const Matrix* m, const Matrix* n, Matrix** r){
     lastColHead->right = *r;  // Fechar a lista circularmente
     
     //AQUI COMEÇA A MULTIPLICAÇÃO MESMO
-    for (Matrix* rowM = m->below; rowM != m; rowM = rowM->below) {
-        for (Matrix* colN = n->right; colN != n; colN = colN->right) {
-            float sum = 0;
-            for (Matrix* elemM = rowM->right; elemM != rowM; elemM = elemM->right) {
-                Matrix* elemN = colN->below;  // Corrigido para começar da coluna correta em n
-                while (elemN != colN && elemN->line < elemM->column) {
-                    elemN = elemN->below;
-                }
-                if (elemN != colN && elemN->line == elemM->column) {
-                    sum += elemM->info * elemN->info;  // Assumindo que os elementos estão alinhados
+       for (int i = 1; i <= mRowCount; i++) {
+        for (int j = 1; j <= nColCount; j++) {
+            float sum = 0.0;
+            for (int k = 1; k <= mColCount; k++) {
+                float m_ik, n_kj;
+                if (matrix_getelem(m, i, k, &m_ik) != -1 && matrix_getelem(n, k, j, &n_kj) != -1) {
+                    sum += m_ik * n_kj;
                 }
             }
-            if (sum != 0.0) {
-                Matrix* newRowElem = create_node(rowM->line, colN->column, sum);
-                if (!newRowElem) {
-                    printf("Falha ao criar novo elemento para a matriz resultante!");
+            if (sum != 0.0) {  // Apenas inserir se o resultado for não-nulo
+                if (matrix_setelem(*r, i, j, sum) == -1) {
+                    printf("Erro ao inserir elemento na matriz resultante!\n");
                     return -1;
                 }
-                // Inserir newRowElem na matriz r na posição correta
-                Matrix* rowHeadR = *r;
-                rowHeadR = rowHeadR->below;
-                while (rowHeadR->line < newRowElem->line) {
-                    rowHeadR = rowHeadR->below;
-                }
-                Matrix* lastElem = rowHeadR;
-                while (lastElem->right != rowHeadR && lastElem->right->column < newRowElem->column) {
-                    lastElem = lastElem->right;
-                }
-                newRowElem->right = lastElem->right;
-                lastElem->right = newRowElem;
             }
         }
     }
@@ -372,29 +356,105 @@ int matrix_multiply(const Matrix* m, const Matrix* n, Matrix** r){
 }
 
 int matrix_transpose(const Matrix* m, Matrix** r){
+    if (!m) {
+        printf("Matriz não existe");
+        return -1;
+    }
 
+    int mRowCount = 0, mColCount = 0;
+    const Matrix* temp = m->below;
+    while (temp != m) {
+        mRowCount++;
+        temp = temp->below;
+    }
+    temp = m->right;
+    while (temp != m) {
+        mColCount++;
+        temp = temp->right;
+    }
+
+    *r = create_node(-1, -1, 0.0);
+    if (!*r) {
+        printf("Não foi possível criar a matriz transposta!");
+        return -1;
+    }
+
+    Matrix* lastRowHead = *r;
+    for (int i = 0; i < mColCount; i++) {
+        Matrix* newRowHead = create_node(-1, 0, 0.0);
+        if (!newRowHead) {
+            printf("Erro ao criar os nós cabeça de linha da matriz transposta!");
+            return -1;
+        }
+        lastRowHead->below = newRowHead;
+        newRowHead->right = newRowHead;
+        lastRowHead = newRowHead;
+    }
+    lastRowHead->below = *r;
+
+    Matrix* lastColHead = *r;
+    for (int i = 0; i < mRowCount; i++) {
+        Matrix* newColHead = create_node(0, -1, 0.0);
+        if (!newColHead) {
+            printf("Erro ao criar os nós cabeça de coluna da matriz transposta!");
+            return -1;
+        }
+        lastColHead->right = newColHead;
+        newColHead->below = newColHead; 
+        lastColHead = newColHead;
+    }
+    lastColHead->right = *r; // Circular na coluna
+
+    // Processar cada elemento em m e inseri-lo na posição transposta em r
+    Matrix* rowHeadM = m->below;
+    while (rowHeadM != m) {
+        Matrix* elemM = rowHeadM->right;
+        while (elemM != rowHeadM) {
+            // Encontrar a coluna correspondente em r
+            Matrix* colHeadR = *r;
+            for (int j = 0; j < elemM->line && colHeadR->right != *r; j++) {
+                colHeadR = colHeadR->right;
+            }
+
+            // Encontrar a linha correspondente em r
+            Matrix* rowHeadR = *r;
+            for (int i = 0; i < elemM->column && rowHeadR->below != *r; i++) {
+                rowHeadR = rowHeadR->below;
+            }
+
+            // Criar novo elemento e inserir
+            Matrix* newElem = create_node(elemM->column, elemM->line, elemM->info);
+            if (!newElem) {
+                printf("Erro ao criar elemento na matriz transposta!");
+                return -1;
+            }
+            // Inserção na nova posição (no final da lista de coluna respectiva)
+            Matrix* lastElem = rowHeadR;
+            while (lastElem->right != rowHeadR) {
+                lastElem = lastElem->right;
+            }
+            newElem->right = rowHeadR; // Mantém a circularidade
+            lastElem->right = newElem;
+
+            elemM = elemM->right;
+        }
+        rowHeadM = rowHeadM->below;
+    }
 
     return 0;
 }
 
 // Parte 3 (Get e Set)
 int matrix_getelem(const Matrix *m, int x, int y, float *elem) {
-    if (!m) {
-        printf("Matriz não existe");
-        return -1;
-    }
+    if (!m) return -1;
 
-    const Matrix *rowHead = m->below; // Começa do primeiro nó cabeça de linha
-    
+    Matrix *rowHead = m->below; // Começa do primeiro nó cabeça de linha
     int countRow = 1; // Contador para percorrer as linhas e colunas
     while (rowHead != m && countRow < x) {
         rowHead = rowHead->below;
         countRow++;
     }
-    if (rowHead == m || countRow != x) {
-        printf("Linha não encontrada!");
-        return -1; // Linha x não encontrada
-    }
+    if (rowHead == m || countRow != x) return -1; // Linha x não encontrada
 
     int countCol = 1;
     Matrix *colHead = m->right; // Começa do primeiro nó cabeça de coluna
@@ -402,31 +462,23 @@ int matrix_getelem(const Matrix *m, int x, int y, float *elem) {
         colHead = colHead->right;
         countCol++;
     }
-    if (colHead == m || countCol != y) {
-        printf("Coluna não encontrada!");
-        return -1; // Coluna y não encontrada
-    }
-
+    if (colHead == m || countCol != y) return -1; // Coluna y não encontrada
     // Assim eu verifico tanto se a linha quanto a coluna são válidas.
 
     // Navegar até a coluna correta na linha x
-    const Matrix *current = rowHead->right;
+    Matrix *current = rowHead->right;
     while (current != rowHead && current->column < y) {
         current = current->right;
     }
 
     // Verificar se o elemento existe na coluna y
     if (current == rowHead || current->column != y) {
-        // *elem = 0.0; // Elemento não encontrado na coluna y, elemento é zero
-        printf("Elemento em (%d, %d) é 0.0", x, y);
+        *elem = 0.0; // Elemento não encontrado na coluna y, elemento é zero
         return 0;
     } else {
         *elem = current->info; // Se encontrado, copiar o valor para *elem
-        printf("Elemento em (%d, %d) é %f\n", x, y, *elem);
         return 0;
     }
-
-
 }
 
 int matrix_setelem(Matrix *m, int x, int y, float elem) {
