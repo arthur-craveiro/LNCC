@@ -100,7 +100,7 @@ int matrix_destroy(Matrix* m){
 
     // Libera o nó cabeça global
     free(m);
-
+    printf("\nMatrix destruída!");
     return 0;  // Sucesso
 }
 
@@ -505,6 +505,7 @@ int main(void) {
 
     /* Criação e impressão da matriz A */
     if (!matrix_create(&A)) {
+        printf("\nMatrix A: \n");
         matrix_print(A);
     } else {
         fprintf(stderr, "Erro na alocação de A como listas encadeadas.\n");
@@ -513,6 +514,7 @@ int main(void) {
 
     /* Criação e impressão da matriz B */
     if (!matrix_create(&B)) {
+        printf("\nMatrix B: \n");
         matrix_print(B);
     } else {
         fprintf(stderr, "Erro na alocação de B como listas encadeadas.\n");
@@ -521,6 +523,7 @@ int main(void) {
 
     /* Adição das matrizes A e B, e impressão do resultado em C */
     if (!matrix_add(A, B, &C)) {
+        printf("\nAdição de A+B = C\n");
         matrix_print(C);
     } else {
         fprintf(stderr, "Erro na soma C=A+B.\n");
@@ -531,6 +534,7 @@ int main(void) {
 
     /* Multiplicação das matrizes A e B, e impressão do resultado em C */
     if (!matrix_multiply(A, B, &C)) {
+        printf("\nMultiplicação de A*B = C\n");
         matrix_print(C);
     } else {
         fprintf(stderr, "Erro na multiplicação C=A*B.\n");
@@ -541,6 +545,7 @@ int main(void) {
 
     /* Transposição da matriz A, e impressão do resultado em C */
     if (!matrix_transpose(A, &C)) {
+        printf("\nTransposição de A:\n");
         matrix_print(C);
     } else {
         fprintf(stderr, "Erro na transposição C=A^T.\n");
